@@ -6,7 +6,6 @@
       }
       user{
         username
-        id
         createdAt
         updatedAt
       }

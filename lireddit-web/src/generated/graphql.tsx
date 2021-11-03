@@ -113,7 +113,6 @@ export const RegisterDocument = gql`
     }
     user {
       username
-      id
       createdAt
       updatedAt
     }
