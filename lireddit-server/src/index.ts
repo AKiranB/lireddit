@@ -12,7 +12,8 @@ import redis from 'redis';
 import session from 'express-session';
 import connectRedis from 'connect-redis'
 import { MyContext } from "./types";
-import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core'
+import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core';
+import cors from 'cors'
 
 declare module "express-session" {
     interface Session {
@@ -31,7 +32,10 @@ const main = async () => {
 
     const RedisStore = connectRedis(session)
     const redisClient = redis.createClient()
-
+    app.use(cors({
+        origin: "http://localhost:3000",
+        credentials: true,
+    }))
     app.use(
         session({
             name: 'qid',
@@ -64,14 +68,17 @@ const main = async () => {
         }),
         plugins: [
             ApolloServerPluginLandingPageGraphQLPlayground({
-
             })
         ],
         context: ({ req, res }): MyContext => ({ em: orm.em, req, res })
     })
 
     await apolloServer.start();
-    apolloServer.applyMiddleware({ app });
+    apolloServer.applyMiddleware({
+        app,
+        cors: { origin: false }
+
+    });
 
 
     app.get('/', (_, res) => {

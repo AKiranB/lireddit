@@ -8,9 +8,6 @@ import { Center, Flex } from "@chakra-ui/react";
 type InputFieldProps = React.InputHTMLAttributes<HTMLInputElement> & {
     name: string;
     label: string;
-
-
-
 };
 
 export const InputField: React.FC<InputFieldProps> = ({
@@ -21,7 +18,6 @@ export const InputField: React.FC<InputFieldProps> = ({
     const [field, { error }] = useField(props);
 
     return (
-
         <FormControl isInvalid={!!error}>
             <FormLabel htmlFor={field.name}>{label}</FormLabel>
             <Input
