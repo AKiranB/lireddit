@@ -38,7 +38,7 @@ export class UserResolver {
     async me(
         @Ctx() { req, em }: MyContext
     ) {
-        if (!req.session.userId) {
+        if (req.session.userId === null) {
             return null;
         }
 

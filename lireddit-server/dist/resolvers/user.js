@@ -60,7 +60,7 @@ UserResponse = __decorate([
 ], UserResponse);
 let UserResolver = class UserResolver {
     async me({ req, em }) {
-        if (!req.session.userId) {
+        if (req.session.userId === null) {
             return null;
         }
         const user = await em.findOne(User_1.User, { id: req.session.userId });
