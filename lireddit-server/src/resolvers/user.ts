@@ -79,7 +79,6 @@ export class UserResolver {
         try {
             await em.persistAndFlush(user);
         } catch (err) {
-            console.log(err)
             if (err.code === '23505') {
                 return {
                     errors: [
@@ -104,8 +103,8 @@ export class UserResolver {
         @Arg('options') options: UsernamePasswordInput,
         @Ctx() { em, req }: MyContext
     ): Promise<UserResponse> {
-        const user = await em.findOneOrFail(User, { username: options.username })
-        if (!user) {
+        const user = await em.findOne(User, { username: options.username })
+        if (user === null) {
             return {
                 errors: [
                     {

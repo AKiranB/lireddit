@@ -96,7 +96,6 @@ let UserResolver = class UserResolver {
             await em.persistAndFlush(user);
         }
         catch (err) {
-            console.log(err);
             if (err.code === '23505') {
                 return {
                     errors: [
@@ -113,8 +112,8 @@ let UserResolver = class UserResolver {
     }
     ;
     async login(options, { em, req }) {
-        const user = await em.findOneOrFail(User_1.User, { username: options.username });
-        if (!user) {
+        const user = await em.findOne(User_1.User, { username: options.username });
+        if (user === null) {
             return {
                 errors: [
                     {
