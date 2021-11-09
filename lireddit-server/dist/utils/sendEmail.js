@@ -16,7 +16,7 @@ async function sendEmail(to, html) {
         from: '"Fred Foo 👻" <foo@example.com>',
         to: to,
         subject: "Hello ✔",
-        html,
+        html: html,
     });
     console.log("Message sent: %s", info.messageId);
     console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
