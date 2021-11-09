@@ -22,6 +22,8 @@ const argon2_1 = __importDefault(require("argon2"));
 const constants_1 = require("../constants");
 const UsernamePasswordInput_1 = require("./UsernamePasswordInput");
 const validateRegister_1 = require("../utils/validateRegister");
+const sendEmail_1 = require("src/utils/sendEmail");
+const uuid_1 = require("uuid");
 let FieldError = class FieldError {
 };
 __decorate([
@@ -49,7 +51,14 @@ UserResponse = __decorate([
     (0, type_graphql_1.ObjectType)()
 ], UserResponse);
 let UserResolver = class UserResolver {
-    async forgotPassword(email, { em }) {
+    async forgotPassword(email, { em, redis }) {
+        const user = await em.findOne(User_1.User, { email });
+        if (!user) {
+            return true;
+        }
+        const token = (0, uuid_1.v4)();
+        redis.set(constants_1.FORGET_PASSWORD_TOKEN_PREFIX + token, user.id, 'ex', 1000 * 60 * 60 * 24 * 3);
+        await (0, sendEmail_1.sendEmail)(email, `<a href="http://localhost:3000/change-password/${token}> Reset Password </a>`);
         return true;
     }
     async me({ req, em }) {
