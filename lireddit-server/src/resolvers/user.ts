@@ -33,7 +33,7 @@ export class UserResolver {
         @Arg('token') token: string,
         @Arg('newPassword') newPassword: string,
         @Ctx() { redis, em, req }: MyContext
-    ) {
+    ): Promise<UserResponse> {
         if (newPassword.length <= 3) {
             return {
                 errors: [
@@ -45,14 +45,15 @@ export class UserResolver {
             }
         }
 
-        const userId = await redis.get(FORGET_PASSWORD_TOKEN_PREFIX + token);
+        const key = FORGET_PASSWORD_TOKEN_PREFIX + token
+        const userId = await redis.get(key);
 
-        if (!userId) {
+        if (userId === null) {
             return {
                 errors: [
                     {
                         field: 'token',
-                        messsage: 'invalid token'
+                        message: 'token expired'
                     }
 
                 ]
@@ -61,12 +62,12 @@ export class UserResolver {
 
         const user = await em.findOne(User, { id: parseInt(userId) })
 
-        if (!user) {
+        if (user === null) {
             return {
                 errors: [
                     {
                         field: 'token',
-                        messsage: 'user no longer exists'
+                        message: 'user no longer exists'
                     }
 
                 ]
@@ -76,11 +77,13 @@ export class UserResolver {
         user.password = await argon2.hash(newPassword)
         await em.persistAndFlush(user);
 
-        req.session.userId = user.id
+        //delete token from redis store
+        await redis.del(key);
 
+        //log user into session
+        req.session.userId = user.id;
 
         return { user };
-
     }
 
     @Mutation(() => Boolean)

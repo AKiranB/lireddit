@@ -62,30 +62,32 @@ let UserResolver = class UserResolver {
                 ]
             };
         }
-        const userId = await redis.get(constants_1.FORGET_PASSWORD_TOKEN_PREFIX + token);
-        if (!userId) {
+        const key = constants_1.FORGET_PASSWORD_TOKEN_PREFIX + token;
+        const userId = await redis.get(key);
+        if (userId === null) {
             return {
                 errors: [
                     {
                         field: 'token',
-                        messsage: 'invalid token'
+                        message: 'token expired'
                     }
                 ]
             };
         }
         const user = await em.findOne(User_1.User, { id: parseInt(userId) });
-        if (!user) {
+        if (user === null) {
             return {
                 errors: [
                     {
                         field: 'token',
-                        messsage: 'user no longer exists'
+                        message: 'user no longer exists'
                     }
                 ]
             };
         }
         user.password = await argon2_1.default.hash(newPassword);
         await em.persistAndFlush(user);
+        await redis.del(key);
         req.session.userId = user.id;
         return { user };
     }

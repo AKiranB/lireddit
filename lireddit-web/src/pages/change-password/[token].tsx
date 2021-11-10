@@ -1,5 +1,5 @@
 import { Button } from '@chakra-ui/button'
-import { Box } from '@chakra-ui/layout'
+import { Box, Link } from '@chakra-ui/layout'
 import { Formik, Form } from 'formik'
 import { NextPage } from 'next'
 import { withUrqlClient } from 'next-urql'
@@ -10,11 +10,12 @@ import { Wrapper } from '../../components/Wrapper'
 import { useChangePasswordMutation } from '../../generated/graphql'
 import { createUrqlClient } from '../../utils/createUrqlClient'
 import { toErrorMap } from '../../utils/toErrorMap'
-import login from '../login'
+import NextLink from 'next/link'
+import { Flex } from '@chakra-ui/react'
 
 
 const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
-    const [tokenError, setTokenError] = useState();
+    const [tokenError, setTokenError] = useState('');
     const router = useRouter();
     const [, changePassword] = useChangePasswordMutation();
 
@@ -27,13 +28,11 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
                         token,
                     });
                     if (response.data?.changePassword.errors) {
+                        console.log(response.data?.changePassword.errors)
                         const errorMap = toErrorMap(response.data.changePassword.errors)
                         if ('token' in errorMap) {
                             setTokenError(errorMap.token as any)
-                        } else {
-                            setErrors(errorMap);
                         }
-
                         setErrors(errorMap)
                     } else if (response.data?.changePassword.user) {
                         router.push('/')
@@ -49,7 +48,17 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
                             label='New Password'
                             type='password'
                         />
-                        {tokenError ? <Box color='blue'>{tokenError}</Box> : null}
+                        {tokenError ? (
+                            <>
+                                <Flex>
+                                    <Box mr={4} color='red'>{tokenError}</Box>
+                                    <NextLink href='/forgot-password'>
+                                        <Link>Create new Token</Link>
+                                    </NextLink>
+                                </Flex>
+                            </>
+
+                        ) : null}
 
                         <Button type='submit'
                             variant='solid'
