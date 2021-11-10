@@ -1,12 +1,12 @@
-import { User } from "../entities/User"
-import { MyContext } from "../types"
-import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
-import argon2 from 'argon2'
-import { COOKIE_NAME, FORGET_PASSWORD_TOKEN_PREFIX } from "../constants"
-import { UsernamePasswordInput } from "./UsernamePasswordInput"
-import { validateRegister } from "../utils/validateRegister"
-import { sendEmail } from "../utils/sendEmail"
-import { v4 } from 'uuid'
+import { User } from "../entities/User";
+import { MyContext } from "../types";
+import { Arg, Ctx, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql";
+import argon2 from 'argon2';
+import { COOKIE_NAME, FORGET_PASSWORD_TOKEN_PREFIX } from "../constants";
+import { UsernamePasswordInput } from "./UsernamePasswordInput";
+import { validateRegister } from "../utils/validateRegister";
+import { sendEmail } from "../utils/sendEmail";
+import { v4 } from 'uuid';
 
 
 @ObjectType()
@@ -20,7 +20,7 @@ class FieldError {
 @ObjectType()
 class UserResponse {
     @Field(() => [FieldError], { nullable: true })
-    errors?: FieldError[]
+    errors?: FieldError[];
 
     @Field(() => User, { nullable: true })
     user?: User;
@@ -32,8 +32,54 @@ export class UserResolver {
     async changePassword(
         @Arg('token') token: string,
         @Arg('newPassword') newPassword: string,
-        @Ctx() { }: MyContext
+        @Ctx() { redis, em, req }: MyContext
     ) {
+        if (newPassword.length <= 3) {
+            return {
+                errors: [
+                    {
+                        field: "newPassword",
+                        message: 'length must be greater than 3'
+                    },
+                ]
+            }
+        }
+
+        const userId = await redis.get(FORGET_PASSWORD_TOKEN_PREFIX + token);
+
+        if (!userId) {
+            return {
+                errors: [
+                    {
+                        field: 'token',
+                        messsage: 'invalid token'
+                    }
+
+                ]
+            }
+        }
+
+        const user = await em.findOne(User, { id: parseInt(userId) })
+
+        if (!user) {
+            return {
+                errors: [
+                    {
+                        field: 'token',
+                        messsage: 'user no longer exists'
+                    }
+
+                ]
+            }
+        }
+
+        user.password = await argon2.hash(newPassword)
+        await em.persistAndFlush(user);
+
+        req.session.userId = user.id
+
+
+        return { user };
 
     }
 

@@ -51,7 +51,43 @@ UserResponse = __decorate([
     (0, type_graphql_1.ObjectType)()
 ], UserResponse);
 let UserResolver = class UserResolver {
-    async changePassword(token, newPassword, {}) {
+    async changePassword(token, newPassword, { redis, em, req }) {
+        if (newPassword.length <= 3) {
+            return {
+                errors: [
+                    {
+                        field: "newPassword",
+                        message: 'length must be greater than 3'
+                    },
+                ]
+            };
+        }
+        const userId = await redis.get(constants_1.FORGET_PASSWORD_TOKEN_PREFIX + token);
+        if (!userId) {
+            return {
+                errors: [
+                    {
+                        field: 'token',
+                        messsage: 'invalid token'
+                    }
+                ]
+            };
+        }
+        const user = await em.findOne(User_1.User, { id: parseInt(userId) });
+        if (!user) {
+            return {
+                errors: [
+                    {
+                        field: 'token',
+                        messsage: 'user no longer exists'
+                    }
+                ]
+            };
+        }
+        user.password = await argon2_1.default.hash(newPassword);
+        await em.persistAndFlush(user);
+        req.session.userId = user.id;
+        return { user };
     }
     async forgotPassword(email, { em, redis }) {
         const user = await em.findOne(User_1.User, { email });
