@@ -8,8 +8,7 @@
     "dev": "nodemon dist/index.js",
     "start": "node dist/index.js",
     "start2": "ts-node src/index.ts",
-    "dev2": "nodemon --exec ts-node src/index.ts",
-    "create:migration": "mikro-orm migration:create"
+    "dev2": "nodemon --exec ts-node src/index.ts"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +26,7 @@
     "nodemailer": "^6.7.0",
     "nodemon": "^2.0.14",
     "ts-node": "^10.4.0",
+    "typeorm": "^0.2.39",
     "typescript": "^4.4.4",
     "uuid": "^8.3.2"
   },

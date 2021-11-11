@@ -24,6 +24,7 @@ const UsernamePasswordInput_1 = require("./UsernamePasswordInput");
 const validateRegister_1 = require("../utils/validateRegister");
 const sendEmail_1 = require("../utils/sendEmail");
 const uuid_1 = require("uuid");
+const typeorm_1 = require("typeorm");
 let FieldError = class FieldError {
 };
 __decorate([
@@ -51,7 +52,7 @@ UserResponse = __decorate([
     (0, type_graphql_1.ObjectType)()
 ], UserResponse);
 let UserResolver = class UserResolver {
-    async changePassword(token, newPassword, { redis, em, req }) {
+    async changePassword(token, newPassword, { redis, req }) {
         if (newPassword.length <= 3) {
             return {
                 errors: [
@@ -74,7 +75,8 @@ let UserResolver = class UserResolver {
                 ]
             };
         }
-        const user = await em.findOne(User_1.User, { id: parseInt(userId) });
+        const userIdNumber = parseInt(userId);
+        const user = await User_1.User.findOne(userIdNumber);
         if (user === null) {
             return {
                 errors: [
@@ -85,14 +87,13 @@ let UserResolver = class UserResolver {
                 ]
             };
         }
-        user.password = await argon2_1.default.hash(newPassword);
-        await em.persistAndFlush(user);
+        await User_1.User.update({ id: userIdNumber }, { password: await argon2_1.default.hash(newPassword) });
         await redis.del(key);
-        req.session.userId = user.id;
+        req.session.userId = userIdNumber;
         return { user };
     }
-    async forgotPassword(email, { em, redis }) {
-        const user = await em.findOne(User_1.User, { email });
+    async forgotPassword(email, { redis }) {
+        const user = await User_1.User.findOne({ where: { email } });
         if (!user) {
             return true;
         }
@@ -101,29 +102,35 @@ let UserResolver = class UserResolver {
         await (0, sendEmail_1.sendEmail)(email, `<a href="http://localhost:3000/change-password/${token}">Reset Password</a>`);
         return true;
     }
-    async me({ req, em }) {
+    async me({ req }) {
         if (req.session.userId === null) {
             return null;
         }
-        const user = await em.findOne(User_1.User, { id: req.session.userId });
+        const user = await User_1.User.findOne(req.session.userId);
         return user;
     }
-    async register(options, { em, req }) {
+    async register(options, { req }) {
         const errors = (0, validateRegister_1.validateRegister)(options);
         if (errors) {
             return { errors };
         }
         const hashedPassword = await argon2_1.default.hash(options.password);
-        const user = em.create(User_1.User, {
-            username: options.username,
-            password: hashedPassword,
-            email: options.email
-        });
+        let user;
         try {
-            await em.persistAndFlush(user);
+            const result = await (0, typeorm_1.getConnection)()
+                .createQueryBuilder()
+                .insert()
+                .into(User_1.User)
+                .values({
+                username: options.username,
+                email: options.email,
+                password: hashedPassword,
+            }).returning("*")
+                .execute();
+            user = result.raw[0];
         }
         catch (err) {
-            console.log(err);
+            console.log('err:', err);
             if (err.code === '23505') {
                 return {
                     errors: [
@@ -139,13 +146,11 @@ let UserResolver = class UserResolver {
         return { user };
     }
     ;
-    async login(usernameOrEmail, password, { em, req }) {
-        const user = await em.findOne(User_1.User, usernameOrEmail.includes('@') ? {
-            email: usernameOrEmail
-        } : {
-            username: usernameOrEmail
-        });
-        if (user === null) {
+    async login(usernameOrEmail, password, { req }) {
+        const user = await User_1.User.findOne(usernameOrEmail.includes('@')
+            ? { where: { email: usernameOrEmail } }
+            : { where: { username: usernameOrEmail } });
+        if (!user) {
             return {
                 errors: [
                     {
@@ -155,7 +160,8 @@ let UserResolver = class UserResolver {
                 ],
             };
         }
-        const valid = await argon2_1.default.verify(user.password, password);
+        const userPassword = user === null || user === void 0 ? void 0 : user.password;
+        const valid = await argon2_1.default.verify(userPassword, password);
         if (password.length <= 3) {
             return {
                 errors: [
@@ -176,7 +182,10 @@ let UserResolver = class UserResolver {
                 ],
             };
         }
-        req.session.userId = user.id;
+        const userId = user === null || user === void 0 ? void 0 : user.id;
+        console.log("userid is:", userId);
+        req.session.userId = userId;
+        console.log(req.session);
         return {
             user,
         };
