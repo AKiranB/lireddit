@@ -19,9 +19,9 @@ const cors_1 = __importDefault(require("cors"));
 const typeorm_1 = require("typeorm");
 const Post_1 = require("./entities/Post");
 const User_1 = require("./entities/User");
-``;
+;
 const main = async () => {
-    const connection = await (0, typeorm_1.createConnection)({
+    await (0, typeorm_1.createConnection)({
         type: 'postgres',
         database: 'lireddit2',
         username: 'postgres',

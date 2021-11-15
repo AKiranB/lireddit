@@ -15,21 +15,15 @@ import { createConnection } from 'typeorm'
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 
-
-``
-
-
 declare module "express-session" {
     interface Session {
         userId: number;
     }
-}
-
-
+};
 
 const main = async () => {
     // create database
-    const connection = await createConnection({
+    await createConnection({
         type: 'postgres',
         database: 'lireddit2',
         username: 'postgres',
@@ -37,9 +31,7 @@ const main = async () => {
         logging: true,
         synchronize: true,
         entities: [Post, User]
-    })
-
-
+    });
 
     const app = express();
 
@@ -49,7 +41,7 @@ const main = async () => {
     app.use(cors({
         origin: "http://localhost:3000",
         credentials: true,
-    }))
+    }));
     app.use(
         session({
             name: COOKIE_NAME,
@@ -70,7 +62,7 @@ const main = async () => {
             resave: false,
 
         })
-    )
+    );
 
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
@@ -82,7 +74,7 @@ const main = async () => {
             })
         ],
         context: ({ req, res, }) => ({ req, res, redis })
-    })
+    });
 
     await apolloServer.start();
     apolloServer.applyMiddleware({
@@ -92,16 +84,16 @@ const main = async () => {
 
     app.get('/', (_, res) => {
         res.send("helo")
-    })
+    });
 
     app.listen(4000, () => {
         console.log('listening on 4000')
-    })
+    });
 
 
 };
 
 main().catch(err => {
     console.log(err)
-})
+});
 
