@@ -14,10 +14,13 @@ import NextLink from 'next/link'
 import { Flex } from '@chakra-ui/react'
 
 
-const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
+const ChangePassword: NextPage<{ token: string }> = () => {
     const [tokenError, setTokenError] = useState('');
     const router = useRouter();
     const [, changePassword] = useChangePasswordMutation();
+
+    console.log(router.query)
+
 
     return (
         <Wrapper variant='small'>
@@ -25,7 +28,9 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
                 onSubmit={async (values, { setErrors }) => {
                     const response = await changePassword({
                         newPassword: values.newPassword,
-                        token,
+                        token:
+                            typeof
+                                router.query.token === 'string' ? router.query.token : ""
                     });
                     if (response.data?.changePassword.errors) {
                         console.log(response.data?.changePassword.errors)
@@ -77,10 +82,6 @@ const ChangePassword: NextPage<{ token: string }> = ({ token }) => {
     )
 }
 
-ChangePassword.getInitialProps = ({ query }) => {
-    return {
-        token: query.token as string
-    }
-}
+
 
 export default withUrqlClient(createUrqlClient)(ChangePassword);

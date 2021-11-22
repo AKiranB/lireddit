@@ -15,6 +15,7 @@ import { createConnection } from 'typeorm'
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 
+
 declare module "express-session" {
     interface Session {
         userId: number;
@@ -23,7 +24,7 @@ declare module "express-session" {
 
 const main = async () => {
     // create database
-    await createConnection({
+    const connection = await createConnection({
         type: 'postgres',
         database: 'lireddit2',
         username: 'postgres',

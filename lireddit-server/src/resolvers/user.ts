@@ -95,8 +95,9 @@ export class UserResolver {
         @Ctx() { redis }: MyContext
     ) {
         const user = await User.findOne({ where: { email } });
-        if (!user) {
-            return true;
+        console.log(user)
+        if (user === undefined) {
+            return
         }
 
         const token = v4();
@@ -171,9 +172,6 @@ export class UserResolver {
             }
 
         }
-        //this sets a cokie on the 
-        //user and keeps them
-        //logged in
         req.session.userId = user.id;
         return { user }
     };

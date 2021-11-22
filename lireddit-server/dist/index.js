@@ -21,7 +21,7 @@ const Post_1 = require("./entities/Post");
 const User_1 = require("./entities/User");
 ;
 const main = async () => {
-    await (0, typeorm_1.createConnection)({
+    const connection = await (0, typeorm_1.createConnection)({
         type: 'postgres',
         database: 'lireddit2',
         username: 'postgres',
